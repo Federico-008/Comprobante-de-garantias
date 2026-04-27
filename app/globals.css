@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+}
+
+.dark {
+  --background: #020617; /* Slate 950 Deep */
+  --foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.transition-premium {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out infinite;
+  animation-iteration-count: 2;
+}
+
+/* aca estan los estilos de impresion */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    height: 100%;
+    width: 100%;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ocultar todo */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Habilitar solo la cadena de contenedores hasta el comprobante */
+  .print-container-reset,
+  #comprobante-para-imprimir,
+  #comprobante-para-imprimir * {
+    visibility: visible !important;
+  }
+
+  /* Limpiar el escalado y márgenes del contenedor en la impresión */
+  .print-container-reset {
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+  }
+
+  /* Posicionar el comprobante en la hoja A4 real */
+  #comprobante-para-imprimir {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 210mm !important;
+    min-height: 296.5mm !important;
+    height: 296.5mm !important;
+    padding: 18mm 20mm !important;
+    background: white !important;
+    box-shadow: none !important;
+    z-index: 99999;
+  }
+
+  /* Asegurarnos que nada más estorbe */
+  .pdf-limit-indicator, button {
+    display: none !important;
+  }
+}
