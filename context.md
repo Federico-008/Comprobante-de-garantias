@@ -3,7 +3,7 @@
 ## Objetivo
 Plataforma SaaS para que negocios emitan comprobantes de garantía profesionales de forma automatizada[cite: 23, 24].
 
-##Stack Tecnológico
+## Stack Tecnológico
 - **Framework:** Next.js 14+
 - **Estilos:** Tailwind CSS (Diseño profesional y rápido)
 - **Backend/DB:** Supabase (Auth, PostgreSQL, Storage)
