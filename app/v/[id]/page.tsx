@@ -62,7 +62,9 @@ export default function PublicWarrantyView() {
     <div className="min-h-screen bg-gray-100 p-4 md:p-8 flex flex-col items-center">
       <div className="max-w-4xl w-full space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-gray-800">Comprobante de Garantía Digital</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {garantia.tipo === 'recepcion' ? 'Orden de Servicio Digital' : 'Comprobante de Garantía Digital'}
+          </h1>
           <p className="text-gray-500">Documento oficial emitido por <span className="font-bold text-gray-700">{perfil.nombre}</span></p>
         </div>
 
@@ -72,7 +74,7 @@ export default function PublicWarrantyView() {
             <ComprobantePDF 
               negocio={perfil}
               garantia={garantia}
-              plantillaTexto={perfil.plantilla_html || ''}
+              plantillaTexto={garantia.tipo === 'recepcion' ? (perfil.plantilla_recepcion_html || '') : (perfil.plantilla_html || '')}
             />
           </div>
         </div>

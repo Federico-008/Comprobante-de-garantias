@@ -14,6 +14,7 @@ export default function ConfiguracionPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [plantillaHtml, setPlantillaHtml] = useState('');
+  const [plantillaRecepcionHtml, setPlantillaRecepcionHtml] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -42,6 +43,7 @@ export default function ConfiguracionPage() {
         setNombre(data.nombre || '');
         setLogoUrl(data.logo_url || '');
         setPlantillaHtml(data.plantilla_html || '');
+        setPlantillaRecepcionHtml(data.plantilla_recepcion_html || '');
       }
     } catch (error) {
       console.error(error);
@@ -85,7 +87,8 @@ export default function ConfiguracionPage() {
         .update({
           nombre: nombre,
           logo_url: finalLogoUrl,
-          plantilla_html: plantillaHtml
+          plantilla_html: plantillaHtml,
+          plantilla_recepcion_html: plantillaRecepcionHtml
         })
         .eq('id', perfil.id);
 
@@ -174,8 +177,19 @@ export default function ConfiguracionPage() {
             )}
 
             <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
-              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">Plantilla de Garantía Predeterminada</label>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Redacta aquí los términos que aparecerán por defecto en cada nuevo comprobante.</p>
+              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">Plantilla de Recepción (Orden de Servicio)</label>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Redacta aquí los términos que aparecerán al recibir un equipo (ej. Contrato de depósito).</p>
+              <div className="dark:bg-white rounded-md overflow-hidden">
+                <EditorPlantilla 
+                  initialValue={plantillaRecepcionHtml} 
+                  onChange={setPlantillaRecepcionHtml} 
+                />
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
+              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">Plantilla de Entrega (Garantía)</label>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Redacta aquí los términos que aparecerán al entregar un equipo y emitir su garantía.</p>
               <div className="dark:bg-white rounded-md overflow-hidden">
                 <EditorPlantilla 
                   initialValue={plantillaHtml} 

@@ -156,8 +156,8 @@ export default function ComprobantePDF({
                 {/* QR para verificación rápida */}
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="text-[8px] font-black text-gray-900 uppercase leading-none">Garantía</p>
-                    <p className="text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">Digital</p>
+                    <p className="text-[8px] font-black text-gray-900 uppercase leading-none">{garantia.tipo === 'recepcion' ? 'Orden de' : 'Garantía'}</p>
+                    <p className="text-[8px] font-bold text-gray-400 uppercase leading-none mt-1">{garantia.tipo === 'recepcion' ? 'Servicio' : 'Digital'}</p>
                   </div>
                   <div className="bg-white p-1.5 border border-gray-100 rounded-xl shadow-sm">
                     <img 
@@ -189,15 +189,42 @@ export default function ComprobantePDF({
                 <span className="text-gray-500 font-medium">Fecha Emisión:</span>{' '}
                 <span className="font-bold text-gray-900">{new Date(garantia.created_at || new Date()).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
               </div>
-              <div className="pt-2 border-t border-gray-200/50">
-                <span className="text-gray-500 font-medium">Vencimiento:</span>{' '}
-                <span className="font-bold text-gray-900">
-                  {garantia.fecha_vencimiento && new Date(garantia.fecha_vencimiento).getTime() > new Date().getTime() 
-                    ? new Date(garantia.fecha_vencimiento).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
-                    : 'A consultar'}
-                </span>
-              </div>
+              {garantia.tipo === 'recepcion' ? (
+                <div className="pt-2 border-t border-gray-200/50">
+                  <span className="text-gray-500 font-medium">Estado Trámite:</span>{' '}
+                  <span className="font-bold text-gray-900">Equipo en Revisión</span>
+                </div>
+              ) : (
+                <div className="pt-2 border-t border-gray-200/50">
+                  <span className="text-gray-500 font-medium">Vencimiento:</span>{' '}
+                  <span className="font-bold text-gray-900">
+                    {garantia.fecha_vencimiento && new Date(garantia.fecha_vencimiento).getTime() > new Date().getTime() 
+                      ? new Date(garantia.fecha_vencimiento).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+                      : 'A consultar'}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* datos especificos */}
+            {garantia.tipo === 'recepcion' ? (
+              <div className="relative z-10 mb-6 border border-gray-200 rounded-2xl p-4 text-sm bg-white shadow-sm">
+                <h3 className="font-bold text-gray-900 mb-3 uppercase text-[10px] tracking-widest border-b border-gray-100 pb-2">Detalle de Recepción</h3>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                  <div><span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Falla Reportada:</span><span className="font-bold text-gray-800">{garantia.producto_data?.falla_reportada || '—'}</span></div>
+                  <div><span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Estado Estético:</span><span className="font-bold text-gray-800">{garantia.producto_data?.estado_estetico || '—'}</span></div>
+                  <div><span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Accesorios:</span><span className="font-bold text-gray-800">{garantia.producto_data?.accesorios || 'Ninguno'}</span></div>
+                  <div><span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Presupuesto Estimado:</span><span className="font-bold text-gray-800">{garantia.producto_data?.presupuesto_estimado || 'A revisar'}</span></div>
+                </div>
+              </div>
+            ) : (
+              garantia.producto_data?.trabajo_realizado && (
+                <div className="relative z-10 mb-6 border border-gray-200 rounded-2xl p-4 text-sm bg-white shadow-sm">
+                  <h3 className="font-bold text-gray-900 mb-2 uppercase text-[10px] tracking-widest border-b border-gray-100 pb-2">Trabajo Realizado</h3>
+                  <p className="font-bold text-gray-800">{garantia.producto_data?.trabajo_realizado}</p>
+                </div>
+              )
+            )}
 
             {/* contenido de la garantia */}
             <div

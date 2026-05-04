@@ -22,6 +22,13 @@ export default function GeneradorGarantia() {
   const [vencimientoDias, setVencimientoDias] = useState(0); 
   const [isLoading, setIsLoading] = useState(true);
   const [isOverflow, setIsOverflow] = useState(false);
+  const [tipoDocumento, setTipoDocumento] = useState<'recepcion' | 'entrega'>('recepcion');
+  const [estadoEstetico, setEstadoEstetico] = useState('');
+  const [fallaReportada, setFallaReportada] = useState('');
+  const [accesorios, setAccesorios] = useState('');
+  const [presupuestoEstimado, setPresupuestoEstimado] = useState('');
+  const [trabajoRealizado, setTrabajoRealizado] = useState('');
+  
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const router = useRouter();
 
@@ -45,7 +52,8 @@ export default function GeneradorGarantia() {
         
       if (perfiles && perfiles.length > 0) {
         setPerfil(perfiles[0]);
-        setPlantilla(perfiles[0].plantilla_html || '<p>Redacta tus términos aquí...</p>');
+        setPerfil(perfiles[0]);
+        setPlantilla(perfiles[0].plantilla_recepcion_html || '<p>Redacta tus términos aquí...</p>');
         
         // Buscar el CF number en base a este negocio
         const nextCF = await getNextCFNumber(perfiles[0].id);
@@ -62,6 +70,16 @@ export default function GeneradorGarantia() {
     }
   };
 
+  useEffect(() => {
+    if (perfil && !shareUrl) { // Solo cambiar si no hemos guardado (para evitar que se sobreescriba al recargar)
+        if (tipoDocumento === 'recepcion') {
+            setPlantilla(perfil.plantilla_recepcion_html || '<p>Redacta tus términos de recepción aquí...</p>');
+        } else {
+            setPlantilla(perfil.plantilla_html || '<p>Redacta tus términos de garantía aquí...</p>');
+        }
+    }
+  }, [tipoDocumento, perfil]);
+
   const handleSaveToDB = async () => {
     if (!perfil) return;
     try {
@@ -70,9 +88,18 @@ export default function GeneradorGarantia() {
       const { data, error: errorGarantia } = await supabase.from('garantias_emitidas').insert({
         cf_number: cfNumber,
         cliente_data: { nombre: nombreCliente, telefono: telefonoCliente },
-        producto_data: { numero_serie: numeroSerie, modelo: modeloDispositivo },
+        producto_data: { 
+          numero_serie: numeroSerie, 
+          modelo: modeloDispositivo,
+          estado_estetico: estadoEstetico,
+          falla_reportada: fallaReportada,
+          accesorios: accesorios,
+          presupuesto_estimado: presupuestoEstimado,
+          trabajo_realizado: trabajoRealizado
+        },
         fecha_vencimiento: getFechaVencimientoISO(),
-        perfil_id: perfil.id
+        perfil_id: perfil.id,
+        tipo: tipoDocumento
       }).select().single();
       
       if (errorGarantia) throw errorGarantia;
@@ -81,10 +108,14 @@ export default function GeneradorGarantia() {
       const baseUrl = window.location.origin;
       setShareUrl(`${baseUrl}/v/${data.id}`);
 
-      // se guarda la plantilla actual
+      // se guarda la plantilla actual dependiendo del tipo
+      const updateData = tipoDocumento === 'recepcion' 
+        ? { plantilla_recepcion_html: plantilla }
+        : { plantilla_html: plantilla };
+
       await supabase
         .from('perfiles_negocio')
-        .update({ plantilla_html: plantilla })
+        .update(updateData)
         .eq('id', perfil.id);
       
       setTimeout(async () => {
@@ -113,9 +144,18 @@ export default function GeneradorGarantia() {
     id: "temp",
     cf_number: cfNumber,
     cliente_data: { nombre: nombreCliente, telefono: telefonoCliente },
-    producto_data: { numero_serie: numeroSerie, modelo: modeloDispositivo },
+    producto_data: { 
+      numero_serie: numeroSerie, 
+      modelo: modeloDispositivo,
+      estado_estetico: estadoEstetico,
+      falla_reportada: fallaReportada,
+      accesorios: accesorios,
+      presupuesto_estimado: presupuestoEstimado,
+      trabajo_realizado: trabajoRealizado
+    },
     fecha_vencimiento: getFechaVencimientoISO(),
-    perfil_id: perfil.id
+    perfil_id: perfil.id,
+    tipo: tipoDocumento
   };
 
   return (
@@ -132,7 +172,31 @@ export default function GeneradorGarantia() {
           {/* controles de la izquierda */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow border border-gray-200 dark:border-slate-800">
-              <h2 className="text-xl font-bold mb-4 border-b dark:border-slate-800 pb-2 text-gray-900 dark:text-white">Configuración</h2>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tipo de Trámite</h2>
+                <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto">
+                  <button
+                    onClick={() => setTipoDocumento('recepcion')}
+                    className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                      tipoDocumento === 'recepcion' 
+                        ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm' 
+                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    1. Recepción (OS)
+                  </button>
+                  <button
+                    onClick={() => setTipoDocumento('entrega')}
+                    className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                      tipoDocumento === 'entrega' 
+                        ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' 
+                        : 'text-gray-500 dark:text-slate-400 hover:text-primary'
+                    }`}
+                  >
+                    2. Entrega (Garantía)
+                  </button>
+                </div>
+              </div>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre del Cliente ({`{{nombre_cliente}}`})</label>
@@ -175,16 +239,77 @@ export default function GeneradorGarantia() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Días de Cobertura</label>
-                  <input 
-                    type="number" 
-                    placeholder="Ej: 365"
-                    value={vencimientoDias || ''}
-                    onChange={(e) => setVencimientoDias(parseInt(e.target.value) || 0)}
-                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-800"
-                  />
-                </div>
+
+                {/* Campos Condicionales según el Tipo */}
+                {tipoDocumento === 'recepcion' ? (
+                  <div className="space-y-4 pt-4 border-t dark:border-slate-800">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Falla Reportada</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ej: No enciende, pantalla rota..."
+                        value={fallaReportada}
+                        onChange={(e) => setFallaReportada(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Estado Estético</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ej: Pantalla rayada, golpe en esquina superior..."
+                        value={estadoEstetico}
+                        onChange={(e) => setEstadoEstetico(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Accesorios</label>
+                        <input 
+                          type="text" 
+                          placeholder="Ej: Funda, cargador..."
+                          value={accesorios}
+                          onChange={(e) => setAccesorios(e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Presupuesto Estimado</label>
+                        <input 
+                          type="text" 
+                          placeholder="Ej: $15.000 (A revisar)"
+                          value={presupuestoEstimado}
+                          onChange={(e) => setPresupuestoEstimado(e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 pt-4 border-t dark:border-slate-800">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Trabajo Realizado</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ej: Cambio de pantalla y batería"
+                        value={trabajoRealizado}
+                        onChange={(e) => setTrabajoRealizado(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Días de Cobertura</label>
+                      <input 
+                        type="number" 
+                        placeholder="Ej: 90"
+                        value={vencimientoDias || ''}
+                        onChange={(e) => setVencimientoDias(parseInt(e.target.value) || 0)}
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border outline-none text-gray-900 dark:text-white bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

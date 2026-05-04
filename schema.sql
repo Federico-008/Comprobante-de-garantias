@@ -8,6 +8,7 @@ CREATE TABLE perfiles_negocio (
   nombre TEXT NOT NULL,
   logo_url TEXT,
   plantilla_html TEXT,
+  plantilla_recepcion_html TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -19,6 +20,7 @@ CREATE TABLE garantias_emitidas (
   producto_data JSONB NOT NULL DEFAULT '{}'::jsonb,
   fecha_vencimiento TIMESTAMP WITH TIME ZONE NOT NULL,
   perfil_id UUID NOT NULL REFERENCES perfiles_negocio(id) ON DELETE CASCADE,
+  tipo TEXT DEFAULT 'entrega',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -82,11 +84,12 @@ USING (perfil_id = auth.uid());
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.perfiles_negocio (id, nombre, plantilla_html)
+  INSERT INTO public.perfiles_negocio (id, nombre, plantilla_html, plantilla_recepcion_html)
   VALUES (
     new.id, 
     COALESCE(new.raw_user_meta_data->>'nombre', 'Mi Negocio'),
-    '<h2>Términos de Garantía</h2><p>El presente documento certifica que el producto con número de serie <strong>{{numero_serie}}</strong>... (edite su plantilla)</p>'
+    '<h2>Términos de Garantía</h2><p>El presente documento certifica que el producto con número de serie <strong>{{numero_serie}}</strong>... (edite su plantilla)</p>',
+    '<h2>Orden de Servicio - Contrato de Depósito</h2><p>Por medio de la presente se deja constancia de la recepción del equipo detallado para su evaluación/reparación. El cliente declara que el equipo ingresa en las condiciones estéticas reportadas.</p>'
   );
   RETURN new;
 END;

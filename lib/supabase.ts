@@ -12,6 +12,7 @@ export type PerfilNegocio = {
   nombre: string;
   logo_url: string;
   plantilla_html: string;
+  plantilla_recepcion_html?: string;
 }
 
 export type GarantiaEmitida = {
@@ -21,4 +22,6 @@ export type GarantiaEmitida = {
   producto_data: any;
   fecha_vencimiento: string;
   perfil_id: string;
+  tipo?: 'recepcion' | 'entrega';
+  created_at?: string;
 }

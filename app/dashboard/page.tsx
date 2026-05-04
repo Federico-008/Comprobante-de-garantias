@@ -295,8 +295,11 @@ export default function Dashboard() {
                           <td className="px-6 py-5">
                             <div className="font-bold text-gray-900 dark:text-white">{g.cliente_data?.nombre || 'Sin nombre'}</div>
                             <div className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 font-medium uppercase">{g.producto_data?.modelo || 'Sin modelo'}</div>
-                            <div className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-                              <Activity size={10} /> Control: {g.cf_number}
+                            <div className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-2">
+                              <span className="flex items-center gap-1"><Activity size={10} /> Control: {g.cf_number}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${g.tipo === 'recepcion' ? 'bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'}`}>
+                                {g.tipo === 'recepcion' ? 'Orden de Servicio' : 'Garantía'}
+                              </span>
                             </div>
                           </td>
                           <td className="px-6 py-5">
