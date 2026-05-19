@@ -9,6 +9,9 @@ CREATE TABLE perfiles_negocio (
   logo_url TEXT,
   plantilla_html TEXT,
   plantilla_recepcion_html TEXT,
+  direccion TEXT,
+  telefono TEXT,
+  color_primario TEXT DEFAULT '#3b82f6',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

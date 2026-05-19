@@ -2,56 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
+@layer base {
+  :root {
+    --background: #fafafa; /* slightly off-white for softer contrast */
+    --foreground: #09090b; /* obsidian-950 */
+    --primary: #2563eb; /* sapphire-600 */
+    --primary-foreground: #ffffff;
+    --border: #e2e8f0;
+    --ring: #93c5fd;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: #09090b; /* obsidian-950 */
+    --foreground: #f8fafc;
+    --primary: #3b82f6; /* sapphire-500 */
+    --primary-foreground: #ffffff;
+    --border: #1e293b;
+    --ring: #1d4ed8;
+  }
 }
 
-.dark {
-  --background: #020617; /* Slate 950 Deep */
-  --foreground: #f8fafc;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background-color: rgb(37 99 235 / 0.15);
+    color: #2563eb;
+  }
+  .dark ::selection {
+    background-color: rgb(59 130 246 / 0.2);
+    color: #60a5fa;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+@layer utilities {
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+  
+  .glass-card {
+    @apply bg-white/70 dark:bg-obsidian-950/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-soft;
+  }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 }
 
-.transition-premium {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.5s ease-out forwards;
-}
-
-.animate-shake {
-  animation: shake 0.3s ease-in-out infinite;
-  animation-iteration-count: 2;
-}
-
-/* aca estan los estilos de impresion */
+/* Estilos de impresion corregidos */
 @media print {
   @page {
     size: A4 portrait;
@@ -68,19 +73,17 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* Ocultar todo */
+  /* Ocultar todo lo que no sea el comprobante */
   body * {
     visibility: hidden !important;
   }
 
-  /* Habilitar solo la cadena de contenedores hasta el comprobante */
   .print-container-reset,
   #comprobante-para-imprimir,
   #comprobante-para-imprimir * {
     visibility: visible !important;
   }
 
-  /* Limpiar el escalado y márgenes del contenedor en la impresión */
   .print-container-reset {
     transform: none !important;
     margin: 0 !important;
@@ -88,7 +91,6 @@ body {
     position: static !important;
   }
 
-  /* Posicionar el comprobante en la hoja A4 real */
   #comprobante-para-imprimir {
     position: absolute !important;
     top: 0 !important;
@@ -102,7 +104,6 @@ body {
     z-index: 99999;
   }
 
-  /* Asegurarnos que nada más estorbe */
   .pdf-limit-indicator, button {
     display: none !important;
   }

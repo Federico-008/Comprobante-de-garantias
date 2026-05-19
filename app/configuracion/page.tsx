@@ -5,18 +5,29 @@ import { supabase } from '@/lib/supabase';
 import type { PerfilNegocio } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, Store, FileText } from 'lucide-react';
+import { 
+  ArrowLeft, Save, Loader2, Store, MapPin, Phone, Palette, 
+  Info, Trash2, AlertTriangle, Image as ImageIcon, FileText,
+  Instagram, Facebook, MessageSquare, Download, Share2
+} from 'lucide-react';
 import EditorPlantilla from '@/components/EditorPlantilla';
 
 export default function ConfiguracionPage() {
-  const [perfil, setPerfil] = useState<PerfilNegocio | null>(null);
+  const [perfil, setPerfil] = useState<any>(null);
   const [nombre, setNombre] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [plantillaHtml, setPlantillaHtml] = useState('');
   const [plantillaRecepcionHtml, setPlantillaRecepcionHtml] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [facebook, setFacebook] = useState('');
+  const [mensajeWs, setMensajeWs] = useState('');
+  const [colorPrimario, setColorPrimario] = useState('#2563eb');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const router = useRouter();
 
@@ -44,11 +55,53 @@ export default function ConfiguracionPage() {
         setLogoUrl(data.logo_url || '');
         setPlantillaHtml(data.plantilla_html || '');
         setPlantillaRecepcionHtml(data.plantilla_recepcion_html || '');
+        setDireccion(data.direccion || '');
+        setTelefono(data.telefono || '');
+        setColorPrimario(data.color_primario || '#2563eb');
+        setInstagram(data.instagram_user || '');
+        setFacebook(data.facebook_user || '');
+        setMensajeWs(data.mensaje_whatsapp_predeterminado || 'Hola {{nombre_cliente}}, adjunto el comprobante de garantia de tu equipo: {{link_comprobante}}');
       }
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const exportData = async () => {
+    try {
+      const { data: garantias } = await supabase
+        .from('garantias_emitidas')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!garantias || garantias.length === 0) {
+        alert("No hay datos para exportar.");
+        return;
+      }
+
+      const headers = ["ID", "Fecha", "Cliente", "Equipo", "Vencimiento"];
+      const rows = garantias.map(g => [
+        g.cf_number,
+        new Date(g.created_at).toLocaleDateString(),
+        g.cliente_data?.nombre,
+        g.producto_data?.modelo,
+        g.fecha_vencimiento
+      ]);
+
+      const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Garantias_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -62,22 +115,16 @@ export default function ConfiguracionPage() {
     try {
       let finalLogoUrl = logoUrl;
 
-      // Si el usuario seleccionó un nuevo archivo desde su computadora
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
-        const fileName = `${perfil.id}-${Date.now()}.${fileExt}`; // Nombre único
+        const fileName = `${perfil.id}-${Date.now()}.${fileExt}`;
         
-        // Subir a Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from('logos')
           .upload(fileName, logoFile, { upsert: true });
           
-        if (uploadError) {
-          console.error("Storage Error:", uploadError);
-          throw new Error("STORAGE: " + uploadError.message);
-        }
+        if (uploadError) throw new Error("STORAGE: " + uploadError.message);
         
-        // Obtener la URL pública del archivo recién subido
         const { data: publicUrlData } = supabase.storage.from('logos').getPublicUrl(fileName);
         finalLogoUrl = publicUrlData.publicUrl;
       }
@@ -88,127 +135,240 @@ export default function ConfiguracionPage() {
           nombre: nombre,
           logo_url: finalLogoUrl,
           plantilla_html: plantillaHtml,
-          plantilla_recepcion_html: plantillaRecepcionHtml
+          plantilla_recepcion_html: plantillaRecepcionHtml,
+          direccion: direccion,
+          telefono: telefono,
+          color_primario: colorPrimario,
+          instagram_user: instagram,
+          facebook_user: facebook,
+          mensaje_whatsapp_predeterminado: mensajeWs
         })
         .eq('id', perfil.id);
 
-      if (error) {
-        console.error("DB Error:", error);
-        throw new Error("BASE DE DATOS: " + error.message);
-      }
+      if (error) throw new Error("BASE DE DATOS: " + error.message);
       
-      setMessage({ text: '¡Perfil actualizado con éxito!', type: 'success' });
-      
-      // Limpiar mensaje después de 3 segundos
+      setMessage({ text: 'Configuracion guardada exitosamente.', type: 'success' });
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err: any) {
-      setMessage({ text: 'Error al guardar: ' + err.message, type: 'error' });
+      setMessage({ text: 'Error: ' + err.message, type: 'error' });
     } finally {
       setSaving(false);
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const confirmation = prompt('ELIMINAR CUENTA: Esta accion es irreversible.\nEscribe "ELIMINAR MI CUENTA" para confirmar:');
+    if (confirmation !== 'ELIMINAR MI CUENTA') return;
+
+    setIsDeletingAccount(true);
+    try {
+      const { error } = await supabase.auth.admin.deleteUser(perfil.id);
+      if (error) throw error;
+      await supabase.auth.signOut();
+      router.push('/login');
+    } catch (err: any) {
+      alert("Error al eliminar cuenta. Contacte a soporte.");
+      setIsDeletingAccount(false);
+    }
+  };
+
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando configuración...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-sapphire-500/10 border-t-sapphire-500 rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 transition-colors duration-300">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/dashboard" className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white transition">
-            <ArrowLeft size={24} />
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-            <Store className="text-primary" size={32} /> Configuración del Negocio
-          </h1>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden">
-          <form onSubmit={handleSave} className="p-8 space-y-6">
-            
-            {message.text && (
-              <div className={`p-4 rounded-md text-sm font-medium ${message.type === 'success' ? 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20' : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20'}`}>
-                {message.text}
-              </div>
-            )}
-
+    <div className="min-h-screen bg-transparent text-foreground pb-20 relative z-10">
+      <div className="max-w-5xl mx-auto px-6">
+        <header className="py-10 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-border/50 mb-10">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="p-3 bg-white dark:bg-white/5 hover:bg-obsidian-50 dark:hover:bg-white/10 rounded-2xl transition-all border border-border/50 shadow-sm">
+              <ArrowLeft size={20} className="text-obsidian-600 dark:text-obsidian-400" />
+            </Link>
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">Nombre Público de tu Negocio</label>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Este nombre aparecerá en la parte superior izquierda de tus comprobantes.</p>
-              <input 
-                type="text" 
-                required
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                className="w-full rounded-md border border-gray-300 dark:border-slate-700 px-4 py-3 text-gray-900 dark:text-white bg-white dark:bg-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
-                placeholder="Ej. TechStore Inc."
-              />
+              <h1 className="text-3xl font-bold tracking-tight">Panel de Control</h1>
+              <p className="text-sm text-obsidian-500 dark:text-obsidian-400 font-medium mt-1">Personaliza tu experiencia y marca profesional.</p>
             </div>
+          </div>
+          <button 
+            onClick={exportData}
+            className="flex items-center gap-2 px-5 py-2.5 bg-obsidian-900 text-white dark:bg-white dark:text-obsidian-950 rounded-2xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all shadow-float"
+          >
+            <Download size={16} /> Exportar Datos
+          </button>
+        </header>
 
-            <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
-              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">Subir Logotipo (Marca de Agua)</label>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
-                Selecciona una imagen en formato PNG o JPG desde tu computadora. Se colocará en el centro de tu comprobante con baja opacidad.
-              </p>
-              <input 
-                type="file" 
-                accept="image/png, image/jpeg"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                    setLogoFile(file);
-                    // Mostrar preview temporal
-                    setLogoUrl(URL.createObjectURL(file)); 
-                  }
-                }}
-                className="w-full text-gray-900 dark:text-white bg-white dark:bg-slate-800 file:cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition"
-              />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <form onSubmit={handleSave} className="space-y-8">
+              {message.text && (
+                <div className={`p-4 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
+                  message.type === 'success'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
+                    : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20'
+                }`}>
+                  <Info size={14} /> {message.text}
+                </div>
+              )}
 
-            {logoUrl && (
-              <div className="pt-2">
-                <p className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Vista previa de tu logo:</p>
-                <div className="bg-gray-100 dark:bg-slate-800 rounded-lg p-4 flex items-center justify-center h-40 border border-gray-300 dark:border-slate-700">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={logoUrl} alt="Logo preview" className="max-h-full max-w-full object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+              <section className="glass-card p-8 rounded-[2rem] space-y-8">
+                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sapphire-600 dark:text-sapphire-400 flex items-center gap-2">
+                  <Store size={14} /> Informacion General
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1">Nombre Comercial</label>
+                    <input
+                      type="text" required value={nombre} onChange={(e) => setNombre(e.target.value)}
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1 flex items-center gap-2"><MapPin size={12} /> Direccion Fisica</label>
+                    <input
+                      type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)}
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Phone size={12} /> Telefono de Contacto</label>
+                    <input
+                      type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)}
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section className="glass-card p-8 rounded-[2rem] space-y-8">
+                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sapphire-600 dark:text-sapphire-400 flex items-center gap-2">
+                  <Share2 size={14} /> Presencia Digital
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Instagram size={12} /> Usuario Instagram</label>
+                    <input
+                      type="text" placeholder="@usuario" value={instagram} onChange={(e) => setInstagram(e.target.value)}
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Facebook size={12} /> Pagina Facebook</label>
+                    <input
+                      type="text" placeholder="facebook.com/pagina" value={facebook} onChange={(e) => setFacebook(e.target.value)}
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1 flex items-center gap-2"><MessageSquare size={12} /> Plantilla de WhatsApp</label>
+                    <textarea 
+                      rows={3} value={mensajeWs} onChange={(e) => setMensajeWs(e.target.value)}
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all resize-none"
+                    />
+                    <p className="text-[10px] text-obsidian-400 mt-1">Usa <code className="bg-obsidian-100 dark:bg-white/5 px-1 rounded">{"{{nombre_cliente}}"}</code> y <code className="bg-obsidian-100 dark:bg-white/5 px-1 rounded">{"{{link_comprobante}}"}</code> para datos dinamicos.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="glass-card p-8 rounded-[2rem] space-y-8">
+                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sapphire-600 dark:text-sapphire-400 flex items-center gap-2">
+                  <FileText size={14} /> Textos Legales
+                </h2>
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1">Terminos de Recepcion</label>
+                    <div className="rounded-2xl overflow-hidden border border-border/50 shadow-inner-soft">
+                      <EditorPlantilla initialValue={plantillaRecepcionHtml} onChange={setPlantillaRecepcionHtml} />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1">Terminos de Entrega y Garantia</label>
+                    <div className="rounded-2xl overflow-hidden border border-border/50 shadow-inner-soft">
+                      <EditorPlantilla initialValue={plantillaHtml} onChange={setPlantillaHtml} />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <div className="flex items-center justify-between pt-6">
+                <button
+                  type="submit" disabled={saving}
+                  className="bg-obsidian-950 text-white dark:bg-white dark:text-obsidian-950 font-bold text-xs uppercase tracking-widest py-5 px-12 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-3 disabled:opacity-50 shadow-float"
+                >
+                  {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                  {saving ? 'Guardando...' : 'Aplicar Cambios'}
+                </button>
+
+                <button
+                  type="button" onClick={handleDeleteAccount}
+                  className="text-red-500 text-[10px] font-black uppercase tracking-[0.2em] hover:opacity-70 transition-opacity flex items-center gap-2"
+                >
+                  <Trash2 size={12} /> Eliminar mi Cuenta
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <aside className="space-y-8">
+            <div className="glass-card p-8 rounded-[2.5rem] sticky top-8 space-y-8">
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-obsidian-400">Vista de Marca</h3>
+              
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-obsidian-400 uppercase tracking-widest ml-1">Firma Visual (Color)</label>
+                  <div className="flex items-center gap-4 p-4 bg-obsidian-50/50 dark:bg-white/5 rounded-2xl border border-border/50">
+                    <input type="color" value={colorPrimario} onChange={(e) => setColorPrimario(e.target.value)} className="h-10 w-16 rounded-xl cursor-pointer bg-transparent border-0" />
+                    <span className="text-xs font-mono font-bold tracking-widest text-obsidian-500 uppercase">{colorPrimario}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-obsidian-400 uppercase tracking-widest ml-1">Identidad (Logo)</label>
+                  <div className="relative group">
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setLogoFile(e.target.files[0]);
+                        setLogoUrl(URL.createObjectURL(e.target.files[0]));
+                      }
+                    }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <div className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-dashed border-obsidian-200 dark:border-white/20 rounded-2xl py-10 flex flex-col items-center justify-center gap-3 transition-all">
+                      <ImageIcon size={24} className="text-obsidian-300" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-obsidian-400">Cambiar Logo</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-border/50 space-y-4">
+                  <p className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest">Previsualizacion del Cabezal</p>
+                  <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm flex justify-between items-end min-h-[120px]">
+                    <div className="max-w-[60%]">
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="Preview" className="max-h-12 w-auto object-contain" />
+                      ) : (
+                        <h4 className="text-lg font-black uppercase text-black leading-tight">{nombre || 'Mi Negocio'}</h4>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="w-8 h-8 rounded-lg mb-2 ml-auto" style={{ backgroundColor: colorPrimario }}></div>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Documento Oficial</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
 
-            <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
-              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">Plantilla de Recepción (Orden de Servicio)</label>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Redacta aquí los términos que aparecerán al recibir un equipo (ej. Contrato de depósito).</p>
-              <div className="dark:bg-white rounded-md overflow-hidden">
-                <EditorPlantilla 
-                  initialValue={plantillaRecepcionHtml} 
-                  onChange={setPlantillaRecepcionHtml} 
-                />
+              <div className="bg-amber-50 dark:bg-amber-500/5 p-6 rounded-2xl border border-amber-100 dark:border-amber-500/10">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-2 mb-2">
+                  <AlertTriangle size={14} /> Zona de Riesgo
+                </h4>
+                <p className="text-[11px] text-amber-800/60 dark:text-amber-400/60 leading-relaxed font-medium">
+                  Al eliminar tu cuenta, todos los datos y comprobantes se perderan permanentemente.
+                </p>
               </div>
             </div>
-
-            <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
-              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">Plantilla de Entrega (Garantía)</label>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">Redacta aquí los términos que aparecerán al entregar un equipo y emitir su garantía.</p>
-              <div className="dark:bg-white rounded-md overflow-hidden">
-                <EditorPlantilla 
-                  initialValue={plantillaHtml} 
-                  onChange={setPlantillaHtml} 
-                />
-              </div>
-            </div>
-
-            <div className="pt-6">
-              <button 
-                type="submit"
-                disabled={saving}
-                className="w-full sm:w-auto bg-primary text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-600 transition flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                {saving ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-            </div>
-          </form>
+          </aside>
         </div>
       </div>
     </div>

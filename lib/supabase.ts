@@ -1,10 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Usamos variables de entorno para las credenciales de Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 
-// Inicializamos el cliente de Supabase
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type PerfilNegocio = {
@@ -13,6 +11,9 @@ export type PerfilNegocio = {
   logo_url: string;
   plantilla_html: string;
   plantilla_recepcion_html?: string;
+  direccion?: string;
+  telefono?: string;
+  color_primario?: string;
 }
 
 export type GarantiaEmitida = {
