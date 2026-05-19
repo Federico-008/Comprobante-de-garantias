@@ -75,16 +75,16 @@ export default function Home() {
           
           <div className="max-w-5xl mx-auto px-6 text-center space-y-10 relative z-10">
             <div className="inline-flex items-center gap-2 bg-sapphire-50 dark:bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-sapphire-200/50 dark:border-sapphire-500/20 animate-fade-in shadow-sm">
-              <Zap size={14} aria-hidden="true" /> La nueva era de la garantía digital
+              <Zap size={14} aria-hidden="true" /> Gestión profesional para servicios técnicos.
             </div>
             
             <h1 className="text-6xl md:text-8xl font-medium tracking-tighter leading-[1.1] text-foreground">
               Emite comprobantes <br className="hidden md:block" />
-              <span className="font-light italic text-obsidian-400">impecables</span> en segundos.
+              <span className="font-light italic text-obsidian-400">profesionales</span> en segundos.
             </h1>
             
             <p className="max-w-2xl mx-auto text-lg md:text-xl text-obsidian-500 dark:text-obsidian-400 font-normal leading-relaxed">
-              La herramienta definitiva diseñada exclusivamente para técnicos y negocios que exigen la máxima profesionalidad. Olvida el papel y transmite excelencia.
+              Un sistema creado para técnicos que cuidan su imagen, su tiempo y la experiencia de sus clientes. Profesionalizá tu negocio sin complicarte.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -121,24 +121,24 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-20 space-y-6">
               <h2 className="text-4xl md:text-5xl font-medium tracking-tighter text-foreground">Todo lo que tu negocio necesita</h2>
-              <p className="text-obsidian-500 dark:text-obsidian-400 max-w-xl mx-auto text-lg">Diseñado con obsesión por los detalles para ser rápido, intuitivo y altamente profesional.</p>
+              <p className="text-obsidian-500 dark:text-obsidian-400 max-w-xl mx-auto text-lg">Diseñado para ofrecer una experiencia rápida, clara y fácil de usar.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FeatureCard 
                 icon={<FileCheck className="text-sapphire-600" aria-hidden="true" />} 
-                title="PDF de Grado Ejecutivo" 
-                desc="Plantillas A4 diseñadas con proporciones áureas. Tus clientes recibirán un documento que grita calidad y respaldo."
+                title="Documentos Profesionales" 
+                desc="Documentos con diseño limpio y profesional que mejoran la imagen de tu negocio en cada entrega."
               />
               <FeatureCard 
                 icon={<Zap className="text-emerald-600" aria-hidden="true" />} 
-                title="Emisión Ultra-Rápida" 
-                desc="Olvídate de procesos lentos. Nuestro formulario optimizado te permite emitir comprobantes en menos de 30 segundos."
+                title="Carga Ágil" 
+                desc="Creá comprobantes de forma rápida y ordenada con un formulario pensado para agilizar tu trabajo diario."
               />
               <FeatureCard 
                 icon={<ShieldCheck className="text-orange-500" aria-hidden="true" />} 
-                title="Historial Blindado" 
-                desc="Accede al instante a todo el historial de reparaciones y ventas de cualquier cliente. Nunca más pierdas un dato vital."
+                title="Registro" 
+                desc="Evitá perder información importante y mantené un seguimiento claro de cada trabajo realizado."
               />
             </div>
           </div>
