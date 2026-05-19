@@ -84,7 +84,8 @@ export default function ComprobantePDF({
         filename: `Garantia_${garantia.cf_number}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
       };
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
@@ -111,7 +112,7 @@ export default function ComprobantePDF({
             ref={pdfRef}
             id="comprobante-para-imprimir"
             className="bg-white text-black shrink-0 shadow-2xl"
-            style={{ width: '210mm', minHeight: '297mm', padding: '15mm', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}
+            style={{ width: '210mm', minHeight: '296.5mm', padding: '15mm', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}
           >
             {/* Marca de Agua Premium */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] dark:opacity-[0.03] overflow-hidden">

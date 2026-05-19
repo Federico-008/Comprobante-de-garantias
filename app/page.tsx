@@ -80,7 +80,7 @@ export default function Home() {
             
             <h1 className="text-6xl md:text-8xl font-medium tracking-tighter leading-[1.1] text-foreground">
               Emite comprobantes <br className="hidden md:block" />
-              <span className="font-light italic text-obsidian-400">profesionales</span> en segundos.
+              <span className="font-light italic text-obsidian-400">profesionales </span> en segundos.
             </h1>
             
             <p className="max-w-2xl mx-auto text-lg md:text-xl text-obsidian-500 dark:text-obsidian-400 font-normal leading-relaxed">
