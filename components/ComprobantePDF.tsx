@@ -115,7 +115,10 @@ export default function ComprobantePDF({
             style={{ width: '210mm', minHeight: '296.5mm', padding: '15mm', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}
           >
             {/* Marca de Agua Premium */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] dark:opacity-[0.03] overflow-hidden">
+            <div 
+              className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden"
+              style={{ opacity: 0.04, zIndex: 0 }}
+            >
               <div className="transform -rotate-[35deg] scale-[2.5] select-none">
                 {negocio.logo_url ? (
                   <img src={negocio.logo_url} alt="" className="w-96 h-auto object-contain grayscale" />
@@ -126,7 +129,7 @@ export default function ComprobantePDF({
             </div>
 
             <div 
-              className="border-b-[3px] pb-5 mb-8 flex justify-between items-end"
+              className="border-b-[3px] pb-5 mb-8 flex justify-between items-end relative z-10"
               style={{ borderColor: negocio.color_primario || '#000' }}
             >
                <div className="max-w-[60%]">
@@ -143,7 +146,7 @@ export default function ComprobantePDF({
             </div>
             
             {/* Sección de Datos de la Operación */}
-            <div className="grid grid-cols-2 gap-4 mb-6 text-xs">
+            <div className="grid grid-cols-2 gap-4 mb-6 text-xs relative z-10">
               {/* Cliente */}
               <div 
                 className="border p-4 rounded-xl flex flex-col justify-between"
@@ -213,12 +216,12 @@ export default function ComprobantePDF({
             </div>
 
             <div
-              className="text-black text-xs"
+              className="text-black text-xs relative z-10"
               dangerouslySetInnerHTML={{ __html: getParsedHTML() }}
             />
 
             {/* Footer con QR de Verificación */}
-            <div className="absolute bottom-10 left-[15mm] right-[15mm] flex justify-between items-end border-t border-gray-100 pt-6">
+            <div className="absolute bottom-10 left-[15mm] right-[15mm] flex justify-between items-end border-t border-gray-100 pt-6 z-10">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Contacto del Negocio</p>
                 <p className="text-[11px] font-medium">{negocio.direccion || 'Sin direccion'}</p>
