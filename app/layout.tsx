@@ -21,14 +21,22 @@ export const metadata = {
   openGraph: {
     title: 'GarantiaPro | Garantías Digitales Profesionales',
     description: 'Optimiza tu negocio con comprobantes digitales verificables por QR.',
-    url: 'https://garantiapro.com',
+    url: 'https://garantiapro.vercel.app',
     siteName: 'GarantiaPro',
     locale: 'es_ES',
     type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GarantiaPro | Comprobantes de Garantía Digital',
+    description: 'Sistema profesional para la creación y gestión de garantías digitales. Envía comprobantes por WhatsApp en segundos.',
+  },
   robots: {
     index: true,
     follow: true,
+  },
+  verification: {
+    google: 'ingresa-tu-codigo-de-google-search-console-aqui', // Reemplazar con el token real de Google
   },
 };
 

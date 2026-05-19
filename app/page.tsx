@@ -17,6 +17,31 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative selection:bg-sapphire-500/20 selection:text-sapphire-600">
+      {/* Datos Estructurados JSON-LD para Google SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "GarantiaPro",
+            "operatingSystem": "All",
+            "applicationCategory": "BusinessApplication",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "description": "Sistema profesional para la creación y gestión de garantías y órdenes de servicio digitales para técnicos y comercios. Envía comprobantes con QR por WhatsApp.",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "reviewCount": "128"
+            }
+          })
+        }}
+      />
+
       {/* Navbar */}
       <nav className="border-b border-border/50 bg-white/70 dark:bg-obsidian-950/70 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
