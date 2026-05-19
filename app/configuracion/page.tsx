@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Save, Loader2, Store, MapPin, Phone, Palette, 
   Info, Trash2, AlertTriangle, Image as ImageIcon, FileText,
-  Instagram, Facebook, MessageSquare, Download, Share2
+  Instagram, Facebook, MessageSquare, Download, Share2, Lock
 } from 'lucide-react';
 import EditorPlantilla from '@/components/EditorPlantilla';
 
@@ -29,6 +29,13 @@ export default function ConfiguracionPage() {
   const [saving, setSaving] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Estados para cambio de contraseña
+  const [nuevaClave, setNuevaClave] = useState('');
+  const [confirmarClave, setConfirmarClave] = useState('');
+  const [cambiandoClave, setCambiandoClave] = useState(false);
+  const [claveMensaje, setClaveMensaje] = useState({ text: '', type: '' });
+
   const router = useRouter();
 
   useEffect(() => {
@@ -153,6 +160,38 @@ export default function ConfiguracionPage() {
       setMessage({ text: 'Error: ' + err.message, type: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevaClave) return;
+    
+    if (nuevaClave !== confirmarClave) {
+      setClaveMensaje({ text: 'Las contraseñas no coinciden.', type: 'error' });
+      return;
+    }
+    
+    if (nuevaClave.length < 6) {
+      setClaveMensaje({ text: 'La contraseña debe tener al menos 6 caracteres.', type: 'error' });
+      return;
+    }
+
+    setCambiandoClave(true);
+    setClaveMensaje({ text: '', type: '' });
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: nuevaClave });
+      if (error) throw error;
+      
+      setClaveMensaje({ text: 'Contraseña actualizada exitosamente.', type: 'success' });
+      setNuevaClave('');
+      setConfirmarClave('');
+      setTimeout(() => setClaveMensaje({ text: '', type: '' }), 4000);
+    } catch (err: any) {
+      setClaveMensaje({ text: err.message || 'Error al actualizar contraseña.', type: 'error' });
+    } finally {
+      setCambiandoClave(false);
     }
   };
 
@@ -290,6 +329,58 @@ export default function ConfiguracionPage() {
                       <EditorPlantilla initialValue={plantillaHtml} onChange={setPlantillaHtml} />
                     </div>
                   </div>
+                </div>
+              </section>
+
+              {/* Sección de Seguridad y Contraseña */}
+              <section className="glass-card p-8 rounded-[2rem] space-y-6">
+                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sapphire-600 dark:text-sapphire-400 flex items-center gap-2">
+                  <Lock size={14} /> Seguridad y Acceso
+                </h2>
+                
+                {claveMensaje.text && (
+                  <div className={`p-4 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
+                    claveMensaje.type === 'success'
+                      ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
+                      : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20'
+                  }`}>
+                    <Info size={14} /> {claveMensaje.text}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1">Nueva Contraseña</label>
+                    <input
+                      type="password"
+                      value={nuevaClave}
+                      onChange={(e) => setNuevaClave(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all placeholder:text-obsidian-300"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1">Confirmar Nueva Contraseña</label>
+                    <input
+                      type="password"
+                      value={confirmarClave}
+                      onChange={(e) => setConfirmarClave(e.target.value)}
+                      placeholder="Repite tu contraseña"
+                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all placeholder:text-obsidian-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={handleUpdatePassword}
+                    disabled={cambiandoClave || !nuevaClave || !confirmarClave}
+                    className="bg-sapphire-600 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-xl hover:bg-sapphire-700 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50 shadow-soft"
+                  >
+                    {cambiandoClave ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                    {cambiandoClave ? 'Actualizando...' : 'Cambiar Clave'}
+                  </button>
                 </div>
               </section>
 
