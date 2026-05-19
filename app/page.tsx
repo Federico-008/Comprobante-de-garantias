@@ -42,108 +42,120 @@ export default function Home() {
         }}
       />
 
-      {/* Navbar */}
-      <nav className="border-b border-border/50 bg-white/70 dark:bg-obsidian-950/70 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      {/* Skip Link para accesibilidad de teclado */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-sapphire-600 text-white px-4 py-2 rounded-xl text-sm font-bold z-[100] outline-none focus:ring-2 focus:ring-sapphire-500 shadow-float">
+        Saltar al contenido principal
+      </a>
+
+      {/* Header y Navbar Semántico */}
+      <header className="border-b border-border/50 bg-white/70 dark:bg-obsidian-950/70 backdrop-blur-xl sticky top-0 z-50">
+        <nav aria-label="Navegación principal" className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 font-bold text-2xl tracking-tight">
             <div className="bg-sapphire-500 p-1.5 rounded-xl shadow-inner-soft">
-              <ShieldCheck size={24} className="text-white" />
+              <ShieldCheck size={24} className="text-white" aria-hidden="true" />
             </div>
             <span className="text-foreground">GarantiaPro</span>
           </div>
           <div className="flex items-center gap-6">
-            <Link href="/login" className="text-sm font-semibold text-obsidian-500 hover:text-foreground transition-colors">
+            <Link href="/login" className="text-sm font-semibold text-obsidian-500 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-sapphire-500 rounded-lg p-1 outline-none">
               Iniciar Sesión
             </Link>
-            <Link href="/registro" className="bg-foreground text-background dark:bg-white dark:text-obsidian-950 px-6 py-2.5 rounded-2xl text-sm font-bold hover:opacity-90 transition-all shadow-float">
+            <Link href="/registro" className="bg-foreground text-background dark:bg-white dark:text-obsidian-950 px-6 py-2.5 rounded-2xl text-sm font-bold hover:opacity-90 transition-all shadow-float focus-visible:ring-2 focus-visible:ring-sapphire-500 outline-none">
               Registrarse Gratis
             </Link>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-sapphire-100/50 dark:from-sapphire-900/20 to-transparent rounded-full blur-3xl -z-10 opacity-70"></div>
-        
-        <div className="max-w-5xl mx-auto px-6 text-center space-y-10 relative z-10">
-          <div className="inline-flex items-center gap-2 bg-sapphire-50 dark:bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-sapphire-200/50 dark:border-sapphire-500/20 animate-fade-in shadow-sm">
-            <Zap size={14} /> La nueva era de la garantía digital
-          </div>
+      {/* Contenido Principal Semántico */}
+      <main id="main-content">
+        {/* Hero Section */}
+        <section className="relative pt-32 pb-20 overflow-hidden" aria-label="Sección de introducción">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-sapphire-100/50 dark:from-sapphire-900/20 to-transparent rounded-full blur-3xl -z-10 opacity-70" aria-hidden="true"></div>
           
-          <h1 className="text-6xl md:text-8xl font-medium tracking-tighter leading-[1.1] text-foreground">
-            Emite comprobantes <br className="hidden md:block" />
-            <span className="font-light italic text-obsidian-400">impecables</span> en segundos.
-          </h1>
-          
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-obsidian-500 dark:text-obsidian-400 font-normal leading-relaxed">
-            La herramienta definitiva diseñada exclusivamente para técnicos y negocios que exigen la máxima profesionalidad. Olvida el papel y transmite excelencia.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link href="/registro" className="w-full sm:w-auto bg-sapphire-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-sapphire-700 transition-all flex items-center justify-center gap-2 shadow-float border border-sapphire-500">
-              Comenzar Ahora <ArrowRight size={20} />
-            </Link>
-            <Link href="#features" className="w-full sm:w-auto bg-white/50 dark:bg-white/5 text-foreground border border-border/50 px-8 py-4 rounded-2xl font-semibold text-lg hover:bg-obsidian-50 dark:hover:bg-white/10 transition-all backdrop-blur-sm">
-              Ver Características
-            </Link>
-          </div>
-          
-          <div className="pt-16 max-w-5xl mx-auto">
-            <div className="bg-white p-2 rounded-2xl shadow-2xl border border-slate-200">
-               <div className="bg-slate-900 rounded-xl aspect-video flex items-center justify-center text-white overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-105 transition-transform duration-700"></div>
-                  <div className="relative z-10 text-center space-y-4 px-6">
-                    <div className="bg-white/10 backdrop-blur-md p-4 rounded-full inline-block border border-white/20">
-                      <FileCheck size={32} />
+          <div className="max-w-5xl mx-auto px-6 text-center space-y-10 relative z-10">
+            <div className="inline-flex items-center gap-2 bg-sapphire-50 dark:bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-sapphire-200/50 dark:border-sapphire-500/20 animate-fade-in shadow-sm">
+              <Zap size={14} aria-hidden="true" /> La nueva era de la garantía digital
+            </div>
+            
+            <h1 className="text-6xl md:text-8xl font-medium tracking-tighter leading-[1.1] text-foreground">
+              Emite comprobantes <br className="hidden md:block" />
+              <span className="font-light italic text-obsidian-400">impecables</span> en segundos.
+            </h1>
+            
+            <p className="max-w-2xl mx-auto text-lg md:text-xl text-obsidian-500 dark:text-obsidian-400 font-normal leading-relaxed">
+              La herramienta definitiva diseñada exclusivamente para técnicos y negocios que exigen la máxima profesionalidad. Olvida el papel y transmite excelencia.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Link href="/registro" className="w-full sm:w-auto bg-sapphire-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-sapphire-700 transition-all flex items-center justify-center gap-2 shadow-float border border-sapphire-500 focus-visible:ring-2 focus-visible:ring-sapphire-500 outline-none">
+                Comenzar Ahora <ArrowRight size={20} aria-hidden="true" />
+              </Link>
+              <Link href="#features" className="w-full sm:w-auto bg-white/50 dark:bg-white/5 text-foreground border border-border/50 px-8 py-4 rounded-2xl font-semibold text-lg hover:bg-obsidian-50 dark:hover:bg-white/10 transition-all backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-sapphire-500 outline-none">
+                Ver Características
+              </Link>
+            </div>
+            
+            <div className="pt-16 max-w-5xl mx-auto">
+              <div className="bg-white p-2 rounded-2xl shadow-2xl border border-slate-200">
+                 <div className="bg-slate-900 rounded-xl aspect-video flex items-center justify-center text-white overflow-hidden relative group">
+                    <div 
+                      className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-105 transition-transform duration-700"
+                      role="img"
+                      aria-label="Captura del dashboard profesional de GarantiaPro mostrando el panel del técnico emitiendo un comprobante"
+                    ></div>
+                    <div className="relative z-10 text-center space-y-4 px-6">
+                      <div className="bg-white/10 backdrop-blur-md p-4 rounded-full inline-block border border-white/20">
+                        <FileCheck size={32} aria-hidden="true" />
+                      </div>
+                      <p className="text-xl font-medium">Dashboard Profesional Interactivo</p>
                     </div>
-                    <p className="text-xl font-medium">Dashboard Profesional Interactivo</p>
-                  </div>
-               </div>
+                 </div>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features */}
-      <section id="features" className="py-32 relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20 space-y-6">
-            <h2 className="text-4xl md:text-5xl font-medium tracking-tighter text-foreground">Todo lo que tu negocio necesita</h2>
-            <p className="text-obsidian-500 dark:text-obsidian-400 max-w-xl mx-auto text-lg">Diseñado con obsesión por los detalles para ser rápido, intuitivo y altamente profesional.</p>
+        {/* Features */}
+        <section id="features" className="py-32 relative z-10" aria-label="Características del servicio">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-20 space-y-6">
+              <h2 className="text-4xl md:text-5xl font-medium tracking-tighter text-foreground">Todo lo que tu negocio necesita</h2>
+              <p className="text-obsidian-500 dark:text-obsidian-400 max-w-xl mx-auto text-lg">Diseñado con obsesión por los detalles para ser rápido, intuitivo y altamente profesional.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FeatureCard 
+                icon={<FileCheck className="text-sapphire-600" aria-hidden="true" />} 
+                title="PDF de Grado Ejecutivo" 
+                desc="Plantillas A4 diseñadas con proporciones áureas. Tus clientes recibirán un documento que grita calidad y respaldo."
+              />
+              <FeatureCard 
+                icon={<Zap className="text-emerald-600" aria-hidden="true" />} 
+                title="Emisión Ultra-Rápida" 
+                desc="Olvídate de procesos lentos. Nuestro formulario optimizado te permite emitir comprobantes en menos de 30 segundos."
+              />
+              <FeatureCard 
+                icon={<ShieldCheck className="text-orange-500" aria-hidden="true" />} 
+                title="Historial Blindado" 
+                desc="Accede al instante a todo el historial de reparaciones y ventas de cualquier cliente. Nunca más pierdas un dato vital."
+              />
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FeatureCard 
-              icon={<FileCheck className="text-sapphire-600" />} 
-              title="PDF de Grado Ejecutivo" 
-              desc="Plantillas A4 diseñadas con proporciones áureas. Tus clientes recibirán un documento que grita calidad y respaldo."
-            />
-            <FeatureCard 
-              icon={<Zap className="text-emerald-600" />} 
-              title="Emisión Ultra-Rápida" 
-              desc="Olvídate de procesos lentos. Nuestro formulario optimizado te permite emitir comprobantes en menos de 30 segundos."
-            />
-            <FeatureCard 
-              icon={<ShieldCheck className="text-orange-500" />} 
-              title="Historial Blindado" 
-              desc="Accede al instante a todo el historial de reparaciones y ventas de cualquier cliente. Nunca más pierdas un dato vital."
-            />
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer */}
+      {/* Footer Semántico */}
       <footer className="py-12 border-t border-border/50 bg-white/30 dark:bg-obsidian-950/30 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 font-bold text-lg text-obsidian-400">
-            <ShieldCheck size={20} />
+            <ShieldCheck size={20} aria-hidden="true" />
             <span>GarantiaPro</span>
           </div>
           <p className="text-obsidian-400 text-sm font-medium">&copy; 2026 GarantiaPro. Todos los derechos reservados.</p>
           <div className="flex gap-6">
-            <Link href="#" className="text-obsidian-400 hover:text-foreground transition text-sm font-medium">Términos</Link>
-            <Link href="#" className="text-obsidian-400 hover:text-foreground transition text-sm font-medium">Privacidad</Link>
+            <Link href="#" className="text-obsidian-400 hover:text-foreground transition text-sm font-medium focus-visible:ring-2 focus-visible:ring-sapphire-500 rounded outline-none p-1">Términos</Link>
+            <Link href="#" className="text-obsidian-400 hover:text-foreground transition text-sm font-medium focus-visible:ring-2 focus-visible:ring-sapphire-500 rounded outline-none p-1">Privacidad</Link>
           </div>
         </div>
       </footer>
