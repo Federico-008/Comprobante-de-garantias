@@ -1,22 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { PerfilNegocio } from '@/lib/supabase';
+import { storage } from '@/lib/storage';
+import { extractDominantColor } from '@/lib/color-extractor';
+import type { PerfilNegocio } from '@/types';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Save, Loader2, Store, MapPin, Phone, Palette, 
-  Info, Trash2, AlertTriangle, Image as ImageIcon, FileText,
-  Instagram, Facebook, MessageSquare, Download, Share2, Lock
+  Info, AlertTriangle, Image as ImageIcon, FileText,
+  Instagram, Facebook, MessageSquare, Download, Upload, Share2, Trash2
 } from 'lucide-react';
 import EditorPlantilla from '@/components/EditorPlantilla';
 
 export default function ConfiguracionPage() {
-  const [perfil, setPerfil] = useState<any>(null);
+  const [perfil, setPerfil] = useState<PerfilNegocio | null>(null);
   const [nombre, setNombre] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
-  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [plantillaHtml, setPlantillaHtml] = useState('');
   const [plantillaRecepcionHtml, setPlantillaRecepcionHtml] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -25,91 +25,106 @@ export default function ConfiguracionPage() {
   const [facebook, setFacebook] = useState('');
   const [mensajeWs, setMensajeWs] = useState('');
   const [colorPrimario, setColorPrimario] = useState('#2563eb');
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-
-  // Estados para cambio de contraseña
-  const [nuevaClave, setNuevaClave] = useState('');
-  const [confirmarClave, setConfirmarClave] = useState('');
-  const [cambiandoClave, setCambiandoClave] = useState(false);
-  const [claveMensaje, setClaveMensaje] = useState({ text: '', type: '' });
 
   const router = useRouter();
 
   useEffect(() => {
-    fetchPerfil();
+    loadData();
   }, []);
 
-  const fetchPerfil = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const { data } = await supabase
-        .from('perfiles_negocio')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (data) {
-        setPerfil(data);
-        setNombre(data.nombre || '');
-        setLogoUrl(data.logo_url || '');
-        setPlantillaHtml(data.plantilla_html || '');
-        setPlantillaRecepcionHtml(data.plantilla_recepcion_html || '');
-        setDireccion(data.direccion || '');
-        setTelefono(data.telefono || '');
-        setColorPrimario(data.color_primario || '#2563eb');
-        setInstagram(data.instagram_user || '');
-        setFacebook(data.facebook_user || '');
-        setMensajeWs(data.mensaje_whatsapp_predeterminado || 'Hola {{nombre_cliente}}, adjunto el comprobante de garantia de tu equipo: {{link_comprobante}}');
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+  const loadData = () => {
+    const p = storage.getPerfil();
+    if (!p.configurado) {
+      router.push('/dashboard');
+      return;
     }
+    
+    setPerfil(p);
+    setNombre(p.nombre || '');
+    setLogoDataUrl(p.logoDataUrl || null);
+    setPlantillaHtml(p.plantillaHtml || '');
+    setPlantillaRecepcionHtml(p.plantillaRecepcionHtml || '');
+    setDireccion(p.direccion || '');
+    setTelefono(p.telefono || '');
+    setColorPrimario(p.colorPrimario || '#2563eb');
+    setInstagram(p.instagram || '');
+    setFacebook(p.facebook || '');
+    setMensajeWs(p.whatsappMessage || '');
+    setLoading(false);
   };
 
-  const exportData = async () => {
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      setLogoDataUrl(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleExtractColor = async () => {
+    if (!logoDataUrl) return;
+    setExtracting(true);
+    const color = await extractDominantColor(logoDataUrl);
+    if (color) {
+      setColorPrimario(color);
+    }
+    setExtracting(false);
+  };
+
+  const exportData = () => {
     try {
-      const { data: garantias } = await supabase
-        .from('garantias_emitidas')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!garantias || garantias.length === 0) {
-        alert("No hay datos para exportar.");
-        return;
-      }
-
-      const headers = ["ID", "Fecha", "Cliente", "Equipo", "Vencimiento"];
-      const rows = garantias.map(g => [
-        g.cf_number,
-        new Date(g.created_at).toLocaleDateString(),
-        g.cliente_data?.nombre,
-        g.producto_data?.modelo,
-        g.fecha_vencimiento
-      ]);
-
-      const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const p = storage.getPerfil();
+      const c = storage.getComprobantes();
+      const data = { perfil: p, comprobantes: c };
+      
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", `Garantias_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute("download", `GarantiaPro_Backup_${new Date().toISOString().split('T')[0]}.json`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (err) {
       console.error(err);
+      alert("Error al exportar datos.");
     }
+  };
+
+  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const jsonStr = event.target?.result as string;
+        const data = JSON.parse(jsonStr);
+        if (data.perfil && data.comprobantes) {
+          storage.savePerfil(data.perfil);
+          // Restore comprobantes by clearing and saving
+          localStorage.setItem('garantias_comprobantes_v1', JSON.stringify(data.comprobantes));
+          window.location.reload();
+        } else {
+          alert("El archivo no tiene el formato correcto.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error al importar datos.");
+      }
+    };
+    reader.readAsText(file);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -120,39 +135,18 @@ export default function ConfiguracionPage() {
     setMessage({ text: '', type: '' });
 
     try {
-      let finalLogoUrl = logoUrl;
-
-      if (logoFile) {
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `${perfil.id}-${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('logos')
-          .upload(fileName, logoFile, { upsert: true });
-          
-        if (uploadError) throw new Error("STORAGE: " + uploadError.message);
-        
-        const { data: publicUrlData } = supabase.storage.from('logos').getPublicUrl(fileName);
-        finalLogoUrl = publicUrlData.publicUrl;
-      }
-
-      const { error } = await supabase
-        .from('perfiles_negocio')
-        .update({
-          nombre: nombre,
-          logo_url: finalLogoUrl,
-          plantilla_html: plantillaHtml,
-          plantilla_recepcion_html: plantillaRecepcionHtml,
-          direccion: direccion,
-          telefono: telefono,
-          color_primario: colorPrimario,
-          instagram_user: instagram,
-          facebook_user: facebook,
-          mensaje_whatsapp_predeterminado: mensajeWs
-        })
-        .eq('id', perfil.id);
-
-      if (error) throw new Error("BASE DE DATOS: " + error.message);
+      storage.savePerfil({
+        nombre,
+        logoDataUrl,
+        plantillaHtml,
+        plantillaRecepcionHtml,
+        direccion,
+        telefono,
+        colorPrimario,
+        instagram,
+        facebook,
+        whatsappMessage: mensajeWs
+      });
       
       setMessage({ text: 'Configuracion guardada exitosamente.', type: 'success' });
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
@@ -163,52 +157,12 @@ export default function ConfiguracionPage() {
     }
   };
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nuevaClave) return;
-    
-    if (nuevaClave !== confirmarClave) {
-      setClaveMensaje({ text: 'Las contraseñas no coinciden.', type: 'error' });
-      return;
-    }
-    
-    if (nuevaClave.length < 6) {
-      setClaveMensaje({ text: 'La contraseña debe tener al menos 6 caracteres.', type: 'error' });
-      return;
-    }
+  const handleResetData = () => {
+    const confirmation = prompt('RESET TOTAL: Se eliminarán TODOS tus datos y comprobantes locales.\nEscribe "RESETEAR" para confirmar:');
+    if (confirmation !== 'RESETEAR') return;
 
-    setCambiandoClave(true);
-    setClaveMensaje({ text: '', type: '' });
-
-    try {
-      const { error } = await supabase.auth.updateUser({ password: nuevaClave });
-      if (error) throw error;
-      
-      setClaveMensaje({ text: 'Contraseña actualizada exitosamente.', type: 'success' });
-      setNuevaClave('');
-      setConfirmarClave('');
-      setTimeout(() => setClaveMensaje({ text: '', type: '' }), 4000);
-    } catch (err: any) {
-      setClaveMensaje({ text: err.message || 'Error al actualizar contraseña.', type: 'error' });
-    } finally {
-      setCambiandoClave(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    const confirmation = prompt('ELIMINAR CUENTA: Esta accion es irreversible.\nEscribe "ELIMINAR MI CUENTA" para confirmar:');
-    if (confirmation !== 'ELIMINAR MI CUENTA') return;
-
-    setIsDeletingAccount(true);
-    try {
-      const { error } = await supabase.auth.admin.deleteUser(perfil.id);
-      if (error) throw error;
-      await supabase.auth.signOut();
-      router.push('/login');
-    } catch (err: any) {
-      alert("Error al eliminar cuenta. Contacte a soporte.");
-      setIsDeletingAccount(false);
-    }
+    storage.clear();
+    window.location.reload();
   };
 
   if (loading) {
@@ -228,16 +182,22 @@ export default function ConfiguracionPage() {
               <ArrowLeft size={20} className="text-obsidian-600 dark:text-obsidian-400" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Panel de Control</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Configuración</h1>
               <p className="text-sm text-obsidian-500 dark:text-obsidian-400 font-medium mt-1">Personaliza tu experiencia y marca profesional.</p>
             </div>
           </div>
-          <button 
-            onClick={exportData}
-            className="flex items-center gap-2 px-5 py-2.5 bg-obsidian-900 text-white dark:bg-white dark:text-obsidian-950 rounded-2xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all shadow-float"
-          >
-            <Download size={16} /> Exportar Datos
-          </button>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 px-5 py-2.5 bg-obsidian-100 text-obsidian-900 dark:bg-white/10 dark:text-white rounded-2xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all cursor-pointer">
+              <Upload size={16} /> Importar
+              <input type="file" accept=".json" className="hidden" onChange={importData} />
+            </label>
+            <button 
+              onClick={exportData}
+              className="flex items-center gap-2 px-5 py-2.5 bg-obsidian-900 text-white dark:bg-white dark:text-obsidian-950 rounded-2xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all shadow-float"
+            >
+              <Download size={16} /> Exportar
+            </button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -332,58 +292,6 @@ export default function ConfiguracionPage() {
                 </div>
               </section>
 
-              {/* Sección de Seguridad y Contraseña */}
-              <section className="glass-card p-8 rounded-[2rem] space-y-6">
-                <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sapphire-600 dark:text-sapphire-400 flex items-center gap-2">
-                  <Lock size={14} /> Seguridad y Acceso
-                </h2>
-                
-                {claveMensaje.text && (
-                  <div className={`p-4 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
-                    claveMensaje.type === 'success'
-                      ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
-                      : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20'
-                  }`}>
-                    <Info size={14} /> {claveMensaje.text}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1">Nueva Contraseña</label>
-                    <input
-                      type="password"
-                      value={nuevaClave}
-                      onChange={(e) => setNuevaClave(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all placeholder:text-obsidian-300"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest ml-1">Confirmar Nueva Contraseña</label>
-                    <input
-                      type="password"
-                      value={confirmarClave}
-                      onChange={(e) => setConfirmarClave(e.target.value)}
-                      placeholder="Repite tu contraseña"
-                      className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-sapphire-500 outline-none transition-all placeholder:text-obsidian-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="button"
-                    onClick={handleUpdatePassword}
-                    disabled={cambiandoClave || !nuevaClave || !confirmarClave}
-                    className="bg-sapphire-600 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-xl hover:bg-sapphire-700 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50 shadow-soft"
-                  >
-                    {cambiandoClave ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                    {cambiandoClave ? 'Actualizando...' : 'Cambiar Clave'}
-                  </button>
-                </div>
-              </section>
-
               <div className="flex items-center justify-between pt-6">
                 <button
                   type="submit" disabled={saving}
@@ -391,13 +299,6 @@ export default function ConfiguracionPage() {
                 >
                   {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                   {saving ? 'Guardando...' : 'Aplicar Cambios'}
-                </button>
-
-                <button
-                  type="button" onClick={handleDeleteAccount}
-                  className="text-red-500 text-[10px] font-black uppercase tracking-[0.2em] hover:opacity-70 transition-opacity flex items-center gap-2"
-                >
-                  <Trash2 size={12} /> Eliminar mi Cuenta
                 </button>
               </div>
             </form>
@@ -409,6 +310,34 @@ export default function ConfiguracionPage() {
               
               <div className="space-y-6">
                 <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-obsidian-400 uppercase tracking-widest ml-1">Identidad (Logo)</label>
+                  <div className="relative group">
+                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <div className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-dashed border-obsidian-200 dark:border-white/20 rounded-2xl py-10 flex flex-col items-center justify-center gap-3 transition-all relative overflow-hidden">
+                      {logoDataUrl ? (
+                        <img src={logoDataUrl} alt="Logo" className="max-h-16 w-auto object-contain z-0" />
+                      ) : (
+                        <>
+                          <ImageIcon size={24} className="text-obsidian-300" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-obsidian-400">Cambiar Logo</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {logoDataUrl && (
+                    <button 
+                      onClick={handleExtractColor}
+                      disabled={extracting}
+                      className="w-full mt-2 py-2 text-[10px] font-bold uppercase tracking-widest text-sapphire-600 bg-sapphire-50 dark:bg-sapphire-500/10 rounded-xl hover:bg-sapphire-100 transition-colors flex justify-center items-center gap-2"
+                    >
+                      {extracting ? <Loader2 className="animate-spin" size={12} /> : <Palette size={12} />}
+                      Extraer Color del Logo
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
                   <label className="text-[10px] font-bold text-obsidian-400 uppercase tracking-widest ml-1">Firma Visual (Color)</label>
                   <div className="flex items-center gap-4 p-4 bg-obsidian-50/50 dark:bg-white/5 rounded-2xl border border-border/50">
                     <input type="color" value={colorPrimario} onChange={(e) => setColorPrimario(e.target.value)} className="h-10 w-16 rounded-xl cursor-pointer bg-transparent border-0" />
@@ -416,28 +345,12 @@ export default function ConfiguracionPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-[10px] font-bold text-obsidian-400 uppercase tracking-widest ml-1">Identidad (Logo)</label>
-                  <div className="relative group">
-                    <input type="file" accept="image/*" onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setLogoFile(e.target.files[0]);
-                        setLogoUrl(URL.createObjectURL(e.target.files[0]));
-                      }
-                    }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                    <div className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-dashed border-obsidian-200 dark:border-white/20 rounded-2xl py-10 flex flex-col items-center justify-center gap-3 transition-all">
-                      <ImageIcon size={24} className="text-obsidian-300" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-obsidian-400">Cambiar Logo</span>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="pt-6 border-t border-border/50 space-y-4">
                   <p className="text-[10px] font-black text-obsidian-400 uppercase tracking-widest">Previsualizacion del Cabezal</p>
                   <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm flex justify-between items-end min-h-[120px]">
                     <div className="max-w-[60%]">
-                      {logoUrl ? (
-                        <img src={logoUrl} alt="Preview" className="max-h-12 w-auto object-contain" />
+                      {logoDataUrl ? (
+                        <img src={logoDataUrl} alt="Preview" className="max-h-12 w-auto object-contain" />
                       ) : (
                         <h4 className="text-lg font-black uppercase text-black leading-tight">{nombre || 'Mi Negocio'}</h4>
                       )}
@@ -454,9 +367,15 @@ export default function ConfiguracionPage() {
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-2 mb-2">
                   <AlertTriangle size={14} /> Zona de Riesgo
                 </h4>
-                <p className="text-[11px] text-amber-800/60 dark:text-amber-400/60 leading-relaxed font-medium">
-                  Al eliminar tu cuenta, todos los datos y comprobantes se perderan permanentemente.
+                <p className="text-[11px] text-amber-800/60 dark:text-amber-400/60 leading-relaxed font-medium mb-4">
+                  Al resetear los datos, todos tus comprobantes locales y configuración se perderan permanentemente.
                 </p>
+                <button
+                  type="button" onClick={handleResetData}
+                  className="w-full bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-400 text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-xl hover:bg-amber-200 dark:hover:bg-amber-900/80 transition-colors flex justify-center items-center gap-2"
+                >
+                  <Trash2 size={12} /> Resetear Datos Locales
+                </button>
               </div>
             </div>
           </aside>
