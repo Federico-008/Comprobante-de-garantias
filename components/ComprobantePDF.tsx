@@ -114,6 +114,7 @@ export default function ComprobantePDF({
         pagebreak: { mode: 'avoid-all' }
       };
 
+      // @ts-ignore: html2pdf types are incomplete
       const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
       const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
 
