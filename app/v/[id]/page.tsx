@@ -10,6 +10,7 @@ export default function PublicWarrantyView() {
   const [garantia, setGarantia] = useState<GarantiaEmitida | null>(null);
   const [perfil, setPerfil] = useState<PerfilNegocio | null>(null);
   const [loading, setLoading] = useState(true);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -17,6 +18,8 @@ export default function PublicWarrantyView() {
 
   const fetchData = async () => {
     try {
+      setVerificationError(null);
+
       // buscamos la garantia
       const { data: garantiaData, error: gError } = await supabase
         .from('garantias_emitidas')
@@ -40,6 +43,11 @@ export default function PublicWarrantyView() {
       setPerfil(perfilData);
     } catch (err) {
       console.error(err);
+      setVerificationError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'No se pudo verificar este comprobante en este momento.'
+      );
     } finally {
       setLoading(false);
     }
@@ -52,10 +60,22 @@ export default function PublicWarrantyView() {
   );
 
   if (!garantia || !perfil) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-3xl p-8 text-center max-w-sm">
-        <p className="text-red-600 dark:text-red-400 font-bold text-lg">Comprobante no encontrado</p>
-        <p className="text-obsidian-500 text-sm mt-2">El documento no existe o ha sido eliminado.</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 text-center max-w-md shadow-sm">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-500/20 mb-4">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 9v4" />
+            <path d="M12 16h.01" />
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+          </svg>
+        </div>
+        <p className="text-amber-700 dark:text-amber-300 font-bold text-lg">No se pudo verificar este comprobante</p>
+        <p className="text-obsidian-500 dark:text-obsidian-400 text-sm mt-2">
+          {verificationError || 'No fue posible validar la autenticidad de este comprobante en este momento.'}
+        </p>
+        <p className="text-obsidian-400 dark:text-obsidian-500 text-xs mt-4">
+          Si el comprobante fue emitido correctamente, este enlace debería mostrar su verificación oficial.
+        </p>
       </div>
     </div>
   );
