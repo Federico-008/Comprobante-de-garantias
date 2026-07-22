@@ -295,7 +295,7 @@ export default function ComprobantePDF({
                 </div>
                 <div className="bg-white p-1.5 rounded-lg shadow-sm">
                   <QRCodeSVG
-                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/v/${garantia.id}`}
+                    value={`${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://garantiapro.vercel.app')}/v/${garantia.id}`}
                     size={60}
                     level="H"
                     includeMargin={false}

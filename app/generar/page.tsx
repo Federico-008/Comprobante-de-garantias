@@ -88,7 +88,7 @@ export default function GeneradorGarantia() {
       
       storage.saveComprobante(comprobante);
 
-      const baseUrl = window.location.origin;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       setShareUrl(`${baseUrl}/v/${newId}`);
 
       const updateData = tipoDocumento === 'recepcion' 
