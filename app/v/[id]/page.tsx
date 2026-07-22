@@ -15,36 +15,32 @@ export default function PublicWarrantyView() {
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!id) throw new Error('ID de comprobante inválido');
+
+        const garantiaData = storage.getComprobanteById(id as string);
+        if (!garantiaData) throw new Error('Garantía no encontrada en este dispositivo');
+
+        setGarantia(garantiaData);
+
+        const p = storage.getPerfil();
+        if (!p.configurado) throw new Error('Negocio no configurado en este dispositivo');
+        setPerfil(p);
+      } catch (err) {
+        console.error(err);
+        setVerificationError(
+          err instanceof Error && err.message
+            ? err.message
+            : 'No se pudo verificar este comprobante en este momento.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, [id]);
-
-  const fetchData = () => {
-    try {
-      // buscamos la garantia
-      const { data: garantiaData, error: gError } = await supabase
-        .from('garantias_emitidas')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (gError || !garantiaData) throw new Error("Garantía no encontrada");
-
-      setGarantia(garantiaData);
-
-      const p = storage.getPerfil();
-      if (!p.configurado) throw new Error("Negocio no configurado");
-      setPerfil(p);
-    } catch (err) {
-      console.error(err);
-      setVerificationError(
-        err instanceof Error && err.message
-          ? err.message
-          : 'No se pudo verificar este comprobante en este momento.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -53,10 +49,15 @@ export default function PublicWarrantyView() {
   );
 
   if (!garantia || !perfil) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-3xl p-8 text-center max-w-sm">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 px-4">
+      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-3xl p-8 text-center max-w-lg">
         <p className="text-red-600 dark:text-red-400 font-bold text-lg">Comprobante no encontrado</p>
-        <p className="text-obsidian-500 text-sm mt-2">El documento no existe o ha sido eliminado.</p>
+        <p className="text-obsidian-500 text-sm mt-2">
+          {verificationError || 'El documento no existe o no está disponible en este dispositivo.'}
+        </p>
+        <p className="text-obsidian-500 text-sm mt-2">
+          Para que el QR funcione desde otro celular, el comprobante debe estar guardado en un backend compartido y la app debe estar desplegada públicamente.
+        </p>
       </div>
     </div>
   );
