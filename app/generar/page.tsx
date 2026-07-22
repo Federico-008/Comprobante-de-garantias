@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import EditorPlantilla from '@/components/EditorPlantilla';
 import ComprobantePDF from '@/components/ComprobantePDF';
-import { supabase } from '@/lib/supabase';
-import type { PerfilNegocio, GarantiaEmitida } from '@/lib/supabase';
-import { getNextCFNumber } from '@/lib/generatorCF';
+import { storage } from '@/lib/storage';
+import type { PerfilNegocio, Comprobante } from '@/types';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, FileText, CheckCircle2 } from 'lucide-react';
 import { SelectorPlantilla } from '@/components/GestorPlantillas';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function GeneradorGarantia() {
   const [perfil, setPerfil] = useState<PerfilNegocio | null>(null);
@@ -36,90 +36,75 @@ export default function GeneradorGarantia() {
     initRealData();
   }, []);
 
-  const initRealData = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: perfiles } = await supabase
-        .from('perfiles_negocio')
-        .select('*')
-        .eq('id', session.user.id);
-        
-      if (perfiles && perfiles.length > 0) {
-        setPerfil(perfiles[0]);
-        setPlantilla(perfiles[0].plantilla_recepcion_html || '<p>Redacta tus términos aquí...</p>');
-        
-        const nextCF = await getNextCFNumber(perfiles[0].id);
-        setCfNumber(nextCF);
-        setNumeroSerie(nextCF);
-      } else {
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+  const initRealData = () => {
+    const p = storage.getPerfil();
+    if (!p.configurado) {
+      router.push('/dashboard');
+      return;
     }
+    
+    setPerfil(p);
+    setPlantilla(p.plantillaRecepcionHtml || '<p>Redacta tus términos aquí...</p>');
+    
+    const nextCF = storage.getNextCfNumber();
+    setCfNumber(nextCF);
+    setNumeroSerie(nextCF);
+    setIsLoading(false);
   };
 
   useEffect(() => {
     if (perfil && !shareUrl) {
         if (tipoDocumento === 'recepcion') {
-            setPlantilla(perfil.plantilla_recepcion_html || '<p>Redacta tus términos de recepción aquí...</p>');
+            setPlantilla(perfil.plantillaRecepcionHtml || '<p>Redacta tus términos de recepción aquí...</p>');
         } else {
-            setPlantilla(perfil.plantilla_html || '<p>Redacta tus términos de garantía aquí...</p>');
+            setPlantilla(perfil.plantillaHtml || '<p>Redacta tus términos de garantía aquí...</p>');
         }
     }
   }, [tipoDocumento, perfil]);
 
-  const handleSaveToDB = async () => {
+  const handleSaveToDB = () => {
     if (!perfil) return;
     try {
       setShareUrl(null);
-      const { data, error: errorGarantia } = await supabase.from('garantias_emitidas').insert({
-        cf_number: cfNumber,
-        cliente_data: { nombre: nombreCliente, telefono: telefonoCliente },
-        producto_data: { 
-          numero_serie: numeroSerie, 
-          modelo: modeloDispositivo,
-          estado_estetico: estadoEstetico,
-          falla_reportada: fallaReportada,
-          accesorios: accesorios,
-          presupuesto_estimado: presupuestoEstimado,
-          trabajo_realizado: trabajoRealizado
-        },
-        fecha_vencimiento: getFechaVencimientoISO(),
-        perfil_id: perfil.id,
-        tipo: tipoDocumento
-      }).select().single();
       
-      if (errorGarantia) throw errorGarantia;
+      const newId = uuidv4();
+      const comprobante: Comprobante = {
+        id: newId,
+        cfNumber,
+        clienteData: { nombre: nombreCliente, telefono: telefonoCliente },
+        productoData: { 
+          numeroSerie, 
+          modelo: modeloDispositivo,
+          estadoEstetico,
+          fallaReportada,
+          accesorios,
+          presupuestoEstimado,
+          trabajoRealizado
+        },
+        fechaVencimiento: getFechaVencimientoISO(),
+        tipo: tipoDocumento,
+        createdAt: new Date().toISOString()
+      };
+      
+      storage.saveComprobante(comprobante);
 
       const baseUrl = window.location.origin;
-      setShareUrl(`${baseUrl}/v/${data.id}`);
+      setShareUrl(`${baseUrl}/v/${newId}`);
 
       const updateData = tipoDocumento === 'recepcion' 
-        ? { plantilla_recepcion_html: plantilla }
-        : { plantilla_html: plantilla };
+        ? { plantillaRecepcionHtml: plantilla }
+        : { plantillaHtml: plantilla };
 
-      await supabase
-        .from('perfiles_negocio')
-        .update(updateData)
-        .eq('id', perfil.id);
+      storage.savePerfil(updateData);
       
-      setTimeout(async () => {
-        const nextCF = await getNextCFNumber(perfil.id);
+      setTimeout(() => {
+        const nextCF = storage.getNextCfNumber();
         setCfNumber(nextCF);
         setNumeroSerie(nextCF);
       }, 2000);
 
     } catch (err) {
-      console.error("Error al guardar en Supabase", err);
-      throw err; 
+      console.error("Error al guardar comprobante", err);
     }
   };
 
@@ -135,22 +120,22 @@ export default function GeneradorGarantia() {
     </div>;
   }
 
-  const garantiaActual: GarantiaEmitida = {
+  const garantiaActual: Comprobante = {
     id: "temp",
-    cf_number: cfNumber,
-    cliente_data: { nombre: nombreCliente, telefono: telefonoCliente },
-    producto_data: { 
-      numero_serie: numeroSerie, 
+    cfNumber: cfNumber,
+    clienteData: { nombre: nombreCliente, telefono: telefonoCliente },
+    productoData: { 
+      numeroSerie, 
       modelo: modeloDispositivo,
-      estado_estetico: estadoEstetico,
-      falla_reportada: fallaReportada,
-      accesorios: accesorios,
-      presupuesto_estimado: presupuestoEstimado,
-      trabajo_realizado: trabajoRealizado
+      estadoEstetico,
+      fallaReportada,
+      accesorios,
+      presupuestoEstimado,
+      trabajoRealizado
     },
-    fecha_vencimiento: getFechaVencimientoISO(),
-    perfil_id: perfil.id,
-    tipo: tipoDocumento
+    fechaVencimiento: getFechaVencimientoISO(),
+    tipo: tipoDocumento,
+    createdAt: new Date().toISOString()
   };
 
   return (
@@ -328,7 +313,7 @@ export default function GeneradorGarantia() {
               <div className="bg-obsidian-50/50 dark:bg-black/20 rounded-2xl border border-border/50 p-4 overflow-hidden relative group">
                 <div className="absolute inset-0 bg-noise opacity-[0.03] pointer-events-none"></div>
                 <ComprobantePDF 
-                  negocio={{...perfil, plantilla_html: plantilla}}
+                  negocio={{...perfil, plantillaHtml: plantilla} as PerfilNegocio}
                   garantia={garantiaActual}
                   plantillaTexto={plantilla}
                   onSave={handleSaveToDB}

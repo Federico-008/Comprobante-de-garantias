@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { supabase, GarantiaEmitida, PerfilNegocio } from '@/lib/supabase';
+import { storage } from '@/lib/storage';
+import type { Comprobante, PerfilNegocio } from '@/types';
 import ComprobantePDF from '@/components/ComprobantePDF';
+import Link from 'next/link';
 
 export default function PublicWarrantyView() {
   const { id } = useParams();
-  const [garantia, setGarantia] = useState<GarantiaEmitida | null>(null);
+  const [garantia, setGarantia] = useState<Comprobante | null>(null);
   const [perfil, setPerfil] = useState<PerfilNegocio | null>(null);
   const [loading, setLoading] = useState(true);
   const [verificationError, setVerificationError] = useState<string | null>(null);
@@ -16,10 +18,8 @@ export default function PublicWarrantyView() {
     fetchData();
   }, [id]);
 
-  const fetchData = async () => {
+  const fetchData = () => {
     try {
-      setVerificationError(null);
-
       // buscamos la garantia
       const { data: garantiaData, error: gError } = await supabase
         .from('garantias_emitidas')
@@ -31,16 +31,9 @@ export default function PublicWarrantyView() {
 
       setGarantia(garantiaData);
 
-      // buscamos el perfil del negocio
-      const { data: perfilData, error: pError } = await supabase
-        .from('perfiles_negocio')
-        .select('*')
-        .eq('id', garantiaData.perfil_id)
-        .single();
-
-      if (pError || !perfilData) throw new Error("Negocio no encontrado");
-
-      setPerfil(perfilData);
+      const p = storage.getPerfil();
+      if (!p.configurado) throw new Error("Negocio no configurado");
+      setPerfil(p);
     } catch (err) {
       console.error(err);
       setVerificationError(
@@ -60,27 +53,14 @@ export default function PublicWarrantyView() {
   );
 
   if (!garantia || !perfil) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 text-center max-w-md shadow-sm">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-500/20 mb-4">
-          <svg viewBox="0 0 24 24" className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 9v4" />
-            <path d="M12 16h.01" />
-            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-          </svg>
-        </div>
-        <p className="text-amber-700 dark:text-amber-300 font-bold text-lg">No se pudo verificar este comprobante</p>
-        <p className="text-obsidian-500 dark:text-obsidian-400 text-sm mt-2">
-          {verificationError || 'No fue posible validar la autenticidad de este comprobante en este momento.'}
-        </p>
-        <p className="text-obsidian-400 dark:text-obsidian-500 text-xs mt-4">
-          Si el comprobante fue emitido correctamente, este enlace debería mostrar su verificación oficial.
-        </p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-3xl p-8 text-center max-w-sm">
+        <p className="text-red-600 dark:text-red-400 font-bold text-lg">Comprobante no encontrado</p>
+        <p className="text-obsidian-500 text-sm mt-2">El documento no existe o ha sido eliminado.</p>
       </div>
     </div>
   );
 
-  // aca empieza la vista publica
   return (
     <div className="min-h-screen bg-background py-10 px-4 md:px-8 flex flex-col items-center relative">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-gradient-to-b from-sapphire-100/30 dark:from-sapphire-900/10 to-transparent rounded-full blur-3xl -z-10 pointer-events-none" />
@@ -105,13 +85,13 @@ export default function PublicWarrantyView() {
             <ComprobantePDF
               negocio={perfil}
               garantia={garantia}
-              plantillaTexto={garantia.tipo === 'recepcion' ? (perfil.plantilla_recepcion_html || '') : (perfil.plantilla_html || '')}
+              plantillaTexto={garantia.tipo === 'recepcion' ? (perfil.plantillaRecepcionHtml || '') : (perfil.plantillaHtml || '')}
             />
           </div>
         </div>
 
         <footer className="text-center text-xs text-obsidian-400 py-6 font-medium">
-          Este documento es una representación digital válida. Consérvelo para cualquier consulta futura.
+          Este documento es una representación digital válida almacenada localmente. Consérvelo para cualquier consulta futura.
         </footer>
       </div>
     </div>
