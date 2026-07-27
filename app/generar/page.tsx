@@ -19,7 +19,8 @@ export default function GeneradorGarantia() {
   const [numeroSerie, setNumeroSerie] = useState('');
   const [modeloDispositivo, setModeloDispositivo] = useState('');
   const [cfNumber, setCfNumber] = useState('...');
-  const [vencimientoDias, setVencimientoDias] = useState(0); 
+  const [vencimientoDias, setVencimientoDias] = useState(0);
+  const [sinGarantia, setSinGarantia] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isOverflow, setIsOverflow] = useState(false);
   const [tipoDocumento, setTipoDocumento] = useState<'recepcion' | 'entrega'>('recepcion');
@@ -109,6 +110,7 @@ export default function GeneradorGarantia() {
   };
 
   const getFechaVencimientoISO = () => {
+    if (sinGarantia) return 'sin-garantia';
     const fecha = new Date();
     fecha.setDate(fecha.getDate() + vencimientoDias);
     return fecha.toISOString();
@@ -278,14 +280,35 @@ export default function GeneradorGarantia() {
                         className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-sapphire-500 focus:border-sapphire-500 outline-none transition-all placeholder:text-obsidian-300"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-obsidian-500 uppercase tracking-widest ml-1">Días de Cobertura</label>
-                      <input 
-                        type="number" 
-                        value={vencimientoDias || ''}
-                        onChange={(e) => setVencimientoDias(parseInt(e.target.value) || 0)}
-                        className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-sapphire-500 focus:border-sapphire-500 outline-none transition-all placeholder:text-obsidian-300"
-                      />
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-obsidian-500 uppercase tracking-widest ml-1">Garantía</label>
+                      {/* Toggle Sin Garantía */}
+                      <button
+                        type="button"
+                        onClick={() => setSinGarantia(!sinGarantia)}
+                        className={`w-full flex items-center justify-between px-5 py-3 rounded-2xl border text-sm font-semibold transition-all ${
+                          sinGarantia
+                            ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400'
+                            : 'bg-obsidian-50/50 dark:bg-white/5 border-border/50 text-obsidian-500'
+                        }`}
+                      >
+                        <span>{sinGarantia ? 'Sin Garantía' : 'Con Garantía'}</span>
+                        <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                          sinGarantia ? 'border-red-500 bg-red-500' : 'border-obsidian-300'
+                        }`}>
+                          {sinGarantia && <span className="w-2 h-2 rounded-full bg-white"/>}
+                        </span>
+                      </button>
+                      {/* Campo de días — solo visible si hay garantía */}
+                      {!sinGarantia && (
+                        <input
+                          type="number"
+                          placeholder="Días de cobertura"
+                          value={vencimientoDias || ''}
+                          onChange={(e) => setVencimientoDias(parseInt(e.target.value) || 0)}
+                          className="w-full bg-obsidian-50/50 dark:bg-white/5 border border-border/50 rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-sapphire-500 focus:border-sapphire-500 outline-none transition-all placeholder:text-obsidian-300"
+                        />
+                      )}
                     </div>
                   </>
                 )}

@@ -264,10 +264,12 @@ export default function ComprobantePDF({
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Garantía Válida Hasta</p>
-                    <p className="font-black text-sm" style={{ color: negocio.colorPrimario || '#000' }}>
-                      {garantia.fechaVencimiento
-                        ? new Date(garantia.fechaVencimiento).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                        : '---'
+                    <p className="font-black text-sm" style={{ color: garantia.fechaVencimiento === 'sin-garantia' ? '#dc2626' : (negocio.colorPrimario || '#000') }}>
+                      {garantia.fechaVencimiento === 'sin-garantia'
+                        ? 'Sin Garantía'
+                        : garantia.fechaVencimiento
+                          ? new Date(garantia.fechaVencimiento).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                          : '---'
                       }
                     </p>
                   </div>
