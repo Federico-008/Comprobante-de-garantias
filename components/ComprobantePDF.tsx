@@ -288,6 +288,7 @@ export default function ComprobantePDF({
                 <p className="text-[11px] font-medium">{negocio.telefono || 'Sin telefono'}</p>
               </div>
 
+              {/* QR de verificación — comentado temporalmente hasta integrar Supabase
               <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100">
                 <div className="text-right">
                   <p className="text-[9px] font-black text-black uppercase leading-tight">Verificar<br />Autenticidad</p>
@@ -303,6 +304,7 @@ export default function ComprobantePDF({
                   />
                 </div>
               </div>
+              */}
             </div>
           </div>
         </div>
